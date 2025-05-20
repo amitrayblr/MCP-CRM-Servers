@@ -267,7 +267,7 @@ server.prompt(
 async function runServer() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Google Maps MCP Server running on stdio");
+  console.error("PipeDrive MCP Server running on stdio");
 }
 
 runServer().catch((error) => {
