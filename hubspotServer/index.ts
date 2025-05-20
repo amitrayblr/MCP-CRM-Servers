@@ -5,25 +5,25 @@ import fetch from "node-fetch";
 
 // Create an MCP server
 const server = new McpServer({
-  name: "Keap API Tools",
+  name: "Hubspot API Server",
   version: "1.0.0",
-  description: "MCP server exposing Keap API tools"
+  description: "MCP server exposing Hubspot API tools"
 });
 
 // ---------------------------------------------- Tools ----------------------------------------------
-// Tool to get Keap contacts
+// Tool to get Hubspot contacts
 server.tool(
-  "keap-list-contacts",
+  "hubspot-list-contacts",
   { 
-    apiKey: z.string().describe("Keap API key"), 
+    apiKey: z.string().describe("Hubspot API key"), 
     limit: z.number().optional().default(10).describe("Number of contacts to return"),
-    fields: z.array(z.string()).optional().default(["email", "given_name", "family_name"]).describe("Contact fields to return")
+    properties: z.array(z.string()).optional().default(["email", "firstname", "lastname"]).describe("Contact properties to return")
   },
-  async ({ apiKey, limit, fields }) => {
+  async ({ apiKey, limit, properties }) => {
     try {
-      const fieldsQuery = fields.join(',');
+      const propertiesQuery = properties.map(p => `properties=${encodeURIComponent(p)}`).join('&');
       const response = await fetch(
-        `https://api.infusionsoft.com/crm/rest/v1/contacts?limit=${limit}&fields=${fieldsQuery}`,
+        `https://api.hubapi.com/crm/v3/objects/contacts?limit=${limit}&${propertiesQuery}`,
         {
           headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -37,7 +37,7 @@ server.tool(
         return {
           content: [{ 
             type: "text", 
-            text: `Error fetching Keap contacts: ${response.status} ${response.statusText}\n${errorText}`
+            text: `Error fetching Hubspot contacts: ${response.status} ${response.statusText}\n${errorText}`
           }],
           isError: true
         };
@@ -54,7 +54,7 @@ server.tool(
       return {
         content: [{ 
           type: "text", 
-          text: `Error fetching Keap contacts: ${error instanceof Error ? error.message : String(error)}`
+          text: `Error fetching Hubspot contacts: ${error instanceof Error ? error.message : String(error)}`
         }],
         isError: true
       };
@@ -62,19 +62,19 @@ server.tool(
   }
 );
 
-// Tool to get Keap contact by ID
+// Tool to get Hubspot contact by ID
 server.tool(
-  "keap-get-contact",
+  "hubspot-get-contact",
   { 
-    apiKey: z.string().describe("Keap API key"), 
+    apiKey: z.string().describe("Hubspot API key"), 
     contactId: z.string().describe("Contact ID"),
-    fields: z.array(z.string()).optional().default(["email", "given_name", "family_name"]).describe("Contact fields to return")
+    properties: z.array(z.string()).optional().default(["email", "firstname", "lastname"]).describe("Contact properties to return")
   },
-  async ({ apiKey, contactId, fields }) => {
+  async ({ apiKey, contactId, properties }) => {
     try {
-      const fieldsQuery = fields.join(',');
+      const propertiesQuery = properties.map(p => `properties=${encodeURIComponent(p)}`).join('&');
       const response = await fetch(
-        `https://api.infusionsoft.com/crm/rest/v1/contacts/${contactId}?fields=${fieldsQuery}`,
+        `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}?${propertiesQuery}`,
         {
           headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -88,7 +88,7 @@ server.tool(
         return {
           content: [{ 
             type: "text", 
-            text: `Error fetching Keap contact: ${response.status} ${response.statusText}\n${errorText}`
+            text: `Error fetching Hubspot contact: ${response.status} ${response.statusText}\n${errorText}`
           }],
           isError: true
         };
@@ -105,7 +105,7 @@ server.tool(
       return {
         content: [{ 
           type: "text", 
-          text: `Error fetching Keap contact: ${error instanceof Error ? error.message : String(error)}`
+          text: `Error fetching Hubspot contact: ${error instanceof Error ? error.message : String(error)}`
         }],
         isError: true
       };
@@ -113,44 +113,24 @@ server.tool(
   }
 );
 
-// Tool to create Keap contact
+// Tool to create Hubspot contact
 server.tool(
-  "keap-create-contact",
+  "hubspot-create-contact",
   { 
-    apiKey: z.string().describe("Keap API key"),
-    contact: z.object({
-      email: z.string().optional(),
-      given_name: z.string().optional(),
-      family_name: z.string().optional(),
-      phone_numbers: z.array(
-        z.object({
-          type: z.string(),
-          number: z.string()
-        })
-      ).optional(),
-      addresses: z.array(
-        z.object({
-          field_type: z.string(),
-          line1: z.string().optional(),
-          city: z.string().optional(),
-          state: z.string().optional(),
-          postal_code: z.string().optional(),
-          country: z.string().optional()
-        })
-      ).optional()
-    }).describe("Contact information")
+    apiKey: z.string().describe("Hubspot API key"), 
+    properties: z.record(z.string()).describe("Contact properties (e.g. email, firstname, lastname)")
   },
-  async ({ apiKey, contact }) => {
+  async ({ apiKey, properties }) => {
     try {
       const response = await fetch(
-        "https://api.infusionsoft.com/crm/rest/v1/contacts",
+        "https://api.hubapi.com/crm/v3/objects/contacts",
         {
           method: "POST",
           headers: {
             'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(contact)
+          body: JSON.stringify({ properties })
         }
       );
       
@@ -159,7 +139,7 @@ server.tool(
         return {
           content: [{ 
             type: "text", 
-            text: `Error creating Keap contact: ${response.status} ${response.statusText}\n${errorText}`
+            text: `Error creating Hubspot contact: ${response.status} ${response.statusText}\n${errorText}`
           }],
           isError: true
         };
@@ -176,7 +156,7 @@ server.tool(
       return {
         content: [{ 
           type: "text", 
-          text: `Error creating Keap contact: ${error instanceof Error ? error.message : String(error)}`
+          text: `Error creating Hubspot contact: ${error instanceof Error ? error.message : String(error)}`
         }],
         isError: true
       };
@@ -184,45 +164,25 @@ server.tool(
   }
 );
 
-// Tool to update Keap contact
+// Tool to update Hubspot contact
 server.tool(
-  "keap-update-contact",
+  "hubspot-update-contact",
   { 
-    apiKey: z.string().describe("Keap API key"),
-    contactId: z.string().describe("Contact ID"),
-    contact: z.object({
-      email: z.string().optional(),
-      given_name: z.string().optional(),
-      family_name: z.string().optional(),
-      phone_numbers: z.array(
-        z.object({
-          type: z.string(),
-          number: z.string()
-        })
-      ).optional(),
-      addresses: z.array(
-        z.object({
-          field_type: z.string(),
-          line1: z.string().optional(),
-          city: z.string().optional(),
-          state: z.string().optional(),
-          postal_code: z.string().optional(),
-          country: z.string().optional()
-        })
-      ).optional()
-    }).describe("Contact information to update")
+    apiKey: z.string().describe("Hubspot API key"),
+    contactId: z.string().describe("Contact ID"), 
+    properties: z.record(z.string()).describe("Contact properties to update")
   },
-  async ({ apiKey, contactId, contact }) => {
+  async ({ apiKey, contactId, properties }) => {
     try {
       const response = await fetch(
-        `https://api.infusionsoft.com/crm/rest/v1/contacts/${contactId}`,
+        `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}`,
         {
           method: "PATCH",
           headers: {
             'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(contact)
+          body: JSON.stringify({ properties })
         }
       );
       
@@ -231,7 +191,7 @@ server.tool(
         return {
           content: [{ 
             type: "text", 
-            text: `Error updating Keap contact: ${response.status} ${response.statusText}\n${errorText}`
+            text: `Error updating Hubspot contact: ${response.status} ${response.statusText}\n${errorText}`
           }],
           isError: true
         };
@@ -248,7 +208,7 @@ server.tool(
       return {
         content: [{ 
           type: "text", 
-          text: `Error updating Keap contact: ${error instanceof Error ? error.message : String(error)}`
+          text: `Error updating Hubspot contact: ${error instanceof Error ? error.message : String(error)}`
         }],
         isError: true
       };
@@ -256,30 +216,40 @@ server.tool(
   }
 );
 
-// Tool to search Keap contacts
+// Tool to search Hubspot contacts
 server.tool(
-  "keap-search-contacts",
+  "hubspot-search-contacts",
   { 
-    apiKey: z.string().describe("Keap API key"),
-    query: z.string().describe("Search query"),
+    apiKey: z.string().describe("Hubspot API key"),
+    query: z.string().describe("Search query"), 
     limit: z.number().optional().default(10).describe("Number of contacts to return"),
-    fields: z.array(z.string()).optional().default(["email", "given_name", "family_name"]).describe("Contact fields to return")
+    properties: z.array(z.string()).optional().default(["email", "firstname", "lastname"]).describe("Contact properties to return")
   },
-  async ({ apiKey, query, limit, fields }) => {
+  async ({ apiKey, query, limit, properties }) => {
     try {
-      const fieldsQuery = fields.join(',');
-      // Keap API requires email format for search
-      const searchParam = query.includes('@') ? 
-        `email=${encodeURIComponent(query)}` : 
-        `given_name=${encodeURIComponent(query)}`;
-      
       const response = await fetch(
-        `https://api.infusionsoft.com/crm/rest/v1/contacts?${searchParam}&limit=${limit}&fields=${fieldsQuery}`,
+        "https://api.hubapi.com/crm/v3/objects/contacts/search",
         {
+          method: "POST",
           headers: {
             'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json'
-          }
+          },
+          body: JSON.stringify({
+            filterGroups: [
+              {
+                filters: [
+                  {
+                    propertyName: "email",
+                    operator: "CONTAINS_TOKEN",
+                    value: query
+                  }
+                ]
+              }
+            ],
+            properties,
+            limit
+          })
         }
       );
       
@@ -288,7 +258,7 @@ server.tool(
         return {
           content: [{ 
             type: "text", 
-            text: `Error searching Keap contacts: ${response.status} ${response.statusText}\n${errorText}`
+            text: `Error searching Hubspot contacts: ${response.status} ${response.statusText}\n${errorText}`
           }],
           isError: true
         };
@@ -305,7 +275,7 @@ server.tool(
       return {
         content: [{ 
           type: "text", 
-          text: `Error searching Keap contacts: ${error instanceof Error ? error.message : String(error)}`
+          text: `Error searching Hubspot contacts: ${error instanceof Error ? error.message : String(error)}`
         }],
         isError: true
       };
@@ -313,19 +283,19 @@ server.tool(
   }
 );
 
-// Tool to list Keap opportunities
+// Tool to list Hubspot deals
 server.tool(
-  "keap-list-opportunities",
+  "hubspot-list-deals",
   { 
-    apiKey: z.string().describe("Keap API key"),
-    limit: z.number().optional().default(10).describe("Number of opportunities to return"),
-    fields: z.array(z.string()).optional().default(["title", "stage", "contact", "estimated_close_date"]).describe("Opportunity fields to return") 
+    apiKey: z.string().describe("Hubspot API key"), 
+    limit: z.number().optional().default(10).describe("Number of deals to return"),
+    properties: z.array(z.string()).optional().default(["dealname", "amount", "dealstage"]).describe("Deal properties to return")
   },
-  async ({ apiKey, limit, fields }) => {
+  async ({ apiKey, limit, properties }) => {
     try {
-      const fieldsQuery = fields.join(',');
+      const propertiesQuery = properties.map(p => `properties=${encodeURIComponent(p)}`).join('&');
       const response = await fetch(
-        `https://api.infusionsoft.com/crm/rest/v1/opportunities?limit=${limit}&fields=${fieldsQuery}`,
+        `https://api.hubapi.com/crm/v3/objects/deals?limit=${limit}&${propertiesQuery}`,
         {
           headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -339,7 +309,7 @@ server.tool(
         return {
           content: [{ 
             type: "text", 
-            text: `Error fetching Keap opportunities: ${response.status} ${response.statusText}\n${errorText}`
+            text: `Error fetching Hubspot deals: ${response.status} ${response.statusText}\n${errorText}`
           }],
           isError: true
         };
@@ -356,7 +326,7 @@ server.tool(
       return {
         content: [{ 
           type: "text", 
-          text: `Error fetching Keap opportunities: ${error instanceof Error ? error.message : String(error)}`
+          text: `Error fetching Hubspot deals: ${error instanceof Error ? error.message : String(error)}`
         }],
         isError: true
       };
