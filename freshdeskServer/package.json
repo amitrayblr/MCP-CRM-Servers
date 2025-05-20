@@ -1,0 +1,27 @@
+{
+  "name": "freshdeskserver",
+  "version": "1.0.0",
+  "description": "Model Context Protocol server for FreshDesk API",
+  "main": "build/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/index.js",
+    "dev": "node --import tsx src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.11.3",
+    "dotenv": "^16.5.0",
+    "axios": "^1.9.0",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.47",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}
